@@ -12,8 +12,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
-    timeout-minutes: 60
+    # windows-2022 ships VS 2022 + v143 MFC (ATLMFC), matching PlatformToolset v143.
+    # windows-latest is VS 2026 and hits MSB8041 for this static-MFC project.
+    runs-on: windows-2022
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -21,41 +23,25 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v3
 
-      - name: Install MFC
+      - name: Verify MFC libs
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-          if (-not (Test-Path $vswhere)) { throw "vswhere not found: $vswhere" }
-          $installPath = & $vswhere -latest -products * -property installationPath
-          if (-not $installPath) { throw 'Visual Studio installation not found' }
-          Write-Host "VS: $installPath"
-
-          $installer = $null
-          foreach ($cand in @(
-            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\setup.exe'),
-            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vs_installer.exe'),
-            (Join-Path $installPath 'Common7\IDE\VSInstaller.exe')
-          )) {
-            if (Test-Path $cand) { $installer = $cand; break }
+          $roots = @(
+            'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC',
+            'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC'
+          ) | Where-Object { Test-Path $_ }
+          $mfc = $null
+          foreach ($root in $roots) {
+            $mfc = Get-ChildItem -Path $root -Recurse -Filter 'nafxcw.lib' -ErrorAction SilentlyContinue |
+              Select-Object -First 1
+            if ($mfc) { break }
           }
-          if (-not $installer) { throw 'Visual Studio installer executable not found' }
-          Write-Host "Installer: $installer"
-
-          # "C++ MFC for latest v143 build tools" (x86 & x64)
-          $args = @(
-            'modify',
-            '--installPath', $installPath,
-            '--add', 'Microsoft.VisualStudio.Component.VC.ATLMFC',
-            '--quiet', '--norestart', '--wait'
-          )
-          Write-Host "Running: $installer $($args -join ' ')"
-          $p = Start-Process -FilePath $installer -ArgumentList $args -Wait -PassThru
-          Write-Host "ExitCode: $($p.ExitCode)"
-          # 0 = success, 3010 = success, reboot required
-          if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
-            throw "MFC install failed with exit code $($p.ExitCode)"
+          if (-not $mfc) {
+            Write-Host 'nafxcw.lib not found; MSVC toolsets present:'
+            foreach ($root in $roots) { Get-ChildItem $root -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name }
+            throw 'MFC static libraries missing on runner'
           }
+          Write-Host "Found: $($mfc.FullName)"
 
       - name: Build Release x64
         run: msbuild YtDlpMfc.sln /p:Configuration=Release /p:Platform=x64 /m /v:m /nologo
@@ -72,7 +58,6 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist\app | Out-Null
           Copy-Item $exe dist\app\
           Copy-Item README.md dist\app\
-          # Portable layout: exe + deps\ sitting side by side
           Move-Item dist\deps dist\app\deps
           Compress-Archive -Path dist\app\* -DestinationPath dist\yt-dlp-windows-win-x64.zip -Force
           Get-ChildItem dist | Format-Table Name, Length
