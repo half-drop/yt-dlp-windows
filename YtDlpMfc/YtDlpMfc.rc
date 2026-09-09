@@ -1,0 +1,82 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_YTDLP_DIALOG DIALOGEX 0, 0, 420, 300
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "YT-DLP Downloader (MFC)"
+FONT 9, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "URL",IDC_LABEL_URL,7,9,40,10
+    EDITTEXT        IDC_URL,50,7,300,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Paste",IDC_PASTE,356,7,50,14
+
+    LTEXT           "Folder",IDC_LABEL_DIR,7,27,40,10
+    EDITTEXT        IDC_DIR,50,25,300,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse",IDC_BROWSE,356,25,50,14
+
+    CONTROL         "Browser cookies",IDC_COOKIES,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,45,120,10
+    LTEXT           "Browser",IDC_LABEL_BROWSER,195,47,36,10
+    COMBOBOX        IDC_BROWSER,235,45,70,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    PUSHBUTTON      "Start",IDC_START,7,62,50,16
+    PUSHBUTTON      "Stop",IDC_STOP,62,62,40,16
+    PUSHBUTTON      "Open Folder",IDC_OPEN_DIR,107,62,60,16
+    PUSHBUTTON      "Clear Log",IDC_CLEAR_LOG,172,62,50,16
+
+    CONTROL         "",IDC_PROGRESS,"msctls_progress32",WS_BORDER,7,84,406,10
+
+    LTEXT           "Ready",IDC_STATUS,7,100,240,10
+    LTEXT           "",IDC_FFMPEG,260,100,153,10,SS_RIGHT
+
+    LTEXT           "Best video+audio merged by ffmpeg. Thumbnail optional.",
+                    IDC_NOTE,7,114,406,18
+
+    EDITTEXT        IDC_LOG,7,136,406,155,ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY |
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,1,0,0
+ PRODUCTVERSION 0,1,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "YT-DLP Downloader MFC"
+            VALUE "FileVersion", "0.1.0.0"
+            VALUE "InternalName", "YtDlpMfc.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2026"
+            VALUE "OriginalFilename", "YtDlpMfc.exe"
+            VALUE "ProductName", "YT-DLP Downloader (MFC)"
+            VALUE "ProductVersion", "0.1.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

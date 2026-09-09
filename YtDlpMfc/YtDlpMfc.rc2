@@ -1,0 +1,4 @@
+#pragma once
+
+// MFC dialog app for yt-dlp.
+// Message map / class docs live in YtDlpMfcDlg.h

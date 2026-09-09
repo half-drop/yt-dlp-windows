@@ -1,0 +1,46 @@
+# Visual Studio / MSBuild
+.vs/
+*.user
+*.suo
+*.opendb
+*.db
+*.ipch
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+Win32/
+*.exe
+*.pdb
+*.ilk
+*.obj
+*.iobj
+*.ipdb
+*.pch
+*.idb
+*.log
+*.tlog
+*.lastbuildstate
+*.res
+
+# Runtime data (generated next to the exe)
+downloads/
+config.json
+
+# Local portable tools (fetched by scripts/fetch-deps.ps1)
+deps/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

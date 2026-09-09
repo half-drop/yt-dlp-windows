@@ -1,0 +1,56 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release x64
+        run: msbuild YtDlpMfc.sln /p:Configuration=Release /p:Platform=x64 /m /v:m /nologo
+
+      - name: Fetch runtime deps
+        shell: pwsh
+        run: .\scripts\fetch-deps.ps1 -OutDir dist\deps
+
+      - name: Stage portable package
+        shell: pwsh
+        run: |
+          $exe = 'bin\x64\Release\YtDlpMfc.exe'
+          if (-not (Test-Path $exe)) { throw "Build output missing: $exe" }
+          New-Item -ItemType Directory -Force -Path dist\app | Out-Null
+          Copy-Item $exe dist\app\
+          Copy-Item README.md dist\app\
+          # Portable layout: exe + deps\ sitting side by side
+          Move-Item dist\deps dist\app\deps
+          Compress-Archive -Path dist\app\* -DestinationPath dist\yt-dlp-windows-win-x64.zip -Force
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-dlp-windows-win-x64
+          path: dist/yt-dlp-windows-win-x64.zip
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/yt-dlp-windows-win-x64.zip
