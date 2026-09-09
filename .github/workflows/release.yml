@@ -13,12 +13,49 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Install MFC
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) { throw "vswhere not found: $vswhere" }
+          $installPath = & $vswhere -latest -products * -property installationPath
+          if (-not $installPath) { throw 'Visual Studio installation not found' }
+          Write-Host "VS: $installPath"
+
+          $installer = $null
+          foreach ($cand in @(
+            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\setup.exe'),
+            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vs_installer.exe'),
+            (Join-Path $installPath 'Common7\IDE\VSInstaller.exe')
+          )) {
+            if (Test-Path $cand) { $installer = $cand; break }
+          }
+          if (-not $installer) { throw 'Visual Studio installer executable not found' }
+          Write-Host "Installer: $installer"
+
+          # "C++ MFC for latest v143 build tools" (x86 & x64)
+          $args = @(
+            'modify',
+            '--installPath', $installPath,
+            '--add', 'Microsoft.VisualStudio.Component.VC.ATLMFC',
+            '--quiet', '--norestart', '--wait'
+          )
+          Write-Host "Running: $installer $($args -join ' ')"
+          $p = Start-Process -FilePath $installer -ArgumentList $args -Wait -PassThru
+          Write-Host "ExitCode: $($p.ExitCode)"
+          # 0 = success, 3010 = success, reboot required
+          if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
+            throw "MFC install failed with exit code $($p.ExitCode)"
+          }
 
       - name: Build Release x64
         run: msbuild YtDlpMfc.sln /p:Configuration=Release /p:Platform=x64 /m /v:m /nologo
